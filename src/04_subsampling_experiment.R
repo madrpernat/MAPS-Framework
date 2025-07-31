@@ -1,12 +1,14 @@
 # ==============================================================================
 # 1. Load Libraries and Utility Functions
 # ==============================================================================
-source('src/utils/som_subsampling_utils.R')
+source(here::here("src", "utils", "som_subsampling_utils.R"))
 
 # ==============================================================================
-# 2. Set and Create Output Directory
+# 2. Set Input Directory and Create Output Directory
 # ==============================================================================
-output_dir <- "output/som_subsampling"
+
+input_dir <- here::here("data", "processed")
+output_dir <- here::here("output", "04_som_subsampling_experiment")
 if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
 
 # ==============================================================================
@@ -14,15 +16,15 @@ if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
 # ==============================================================================
 cols_to_keep <- c('Median', 'demand', 'InitCombinedStorage', 'Neuron')
 
-full_sow_info <- read_parquet(
-  'output/full_factorial_sow_dev/full_factorial_sow_info.parquet'
+ff_sow_info <- read_parquet(
+  file.path(input_dir, "ff_sow_info.parquet")
 )[cols_to_keep]
 
-full_sow_timeseries <- read_parquet(
-  'output/full_factorial_sow_dev/full_factorial_cfd.parquet'
+ff_cfd <- read_parquet(
+  file.path(input_dir, "ff_cfd.parquet")
 )
 
-features <- cbind(full_sow_info, full_sow_timeseries)
+features <- cbind(ff_sow_info, ff_cfd)
 
 # ==============================================================================
 # 4. Define Experiment Parameters
@@ -62,11 +64,11 @@ for (neuron in neurons) {
   cat("Processing Neuron", neuron, "\n")
   
   # Extract and preprocess data for this neuron
-  neuron_sows <- full_sow_info %>%
+  neuron_sows <- ff_sow_info %>%
     filter(Neuron == neuron) %>%
     select(-Neuron)
   
-  neuron_timeseries <- full_sow_timeseries[full_sow_info$Neuron == neuron, ]
+  neuron_timeseries <- ff_cfd[ff_sow_info$Neuron == neuron, ]
   
   data_to_sample <- cbind(neuron_timeseries, neuron_sows)
   
@@ -156,13 +158,13 @@ for (neuron in neurons){
   
   # Compute the true characteristic averages for the neuron
   true_avg_median <- mean(
-    (full_sow_info %>% filter(Neuron == neuron))$Median
+    (ff_sow_info %>% filter(Neuron == neuron))$Median
   )
   true_avg_demand <- mean(
-    (full_sow_info %>% filter(Neuron == neuron))$demand
+    (ff_sow_info %>% filter(Neuron == neuron))$demand
   )
   true_avg_ic <- mean(
-    (full_sow_info %>% filter(Neuron == neuron))$InitCombinedStorage
+    (ff_sow_info %>% filter(Neuron == neuron))$InitCombinedStorage
   )
   
   # Generate and save boxplots for MSTMean and AvgMedianFlow
@@ -363,9 +365,9 @@ for (neuron in neurons){
 # Analyze each metric for each neuron using knee/elbow tests to determine the
 # point of diminishing returns for increasing sample sizes.
 
-# results <- read_parquet(
-#   file=file.path(output_dir, "som_subsample_size_experiment.parquet")
-# )
+results <- read_parquet(
+  file=file.path(output_dir, "som_subsample_size_experiment.parquet")
+)
 
 metrics <- list(
   
