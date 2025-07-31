@@ -1,13 +1,13 @@
+library(here)
 library(stats)
 library(data.table)
 library(lhs)
 library(kohonen)
-library(plyr)
 library(dplyr)
+library(plyr)
 library(plotly)
 library(htmlwidgets)
 library(aweSOM)
-library(nsga2R)
 
 ############################# SOM HELPER FUNCTIONS #############################
 ##################### Coded by Nathan Bonham - March 2022 ######################

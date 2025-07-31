@@ -1,9 +1,9 @@
-library(dplyr)
+
+library(nsga2R)
 library(parallel)
 library(foreach)
 library(doParallel)
 library(ecr)
-
 
 calc_total_ss <- function(data_list, user_weights, distance_metric) {
   

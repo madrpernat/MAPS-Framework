@@ -7,91 +7,77 @@ source(here("src", "utils", "som_library.R"))
 source(here("src", "utils", "error_functions.R"))
 
 # ==============================================================================
-# 2. Define Output Directory
+# 2. Define Output Directory and Load Data
 # ==============================================================================
 
-output_dir <- here::here("output", "som_hyperparameter_tuning")
+output_dir <- here("output", "02_som_hyperparameter_tuning")
+dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 
-# ==============================================================================
-# 3. Load and Prepare Full-Factorial SOW Ensemble Data
-# ==============================================================================
-# Load cumulative flow less demand (CFD) data and system condition and demand 
-# (SCD) data. Perform PCA to calculate principal components and prepare data for 
-# fitting supersom.
-
-# Load CFD data
-cfd_data <- as.matrix(
-  read_parquet(file = here::here("data", "processed", "ff_cfd_scaled.parquet"))
-)
+# Load scaled CFD data (years as columns)
+cfd_data <- as.matrix(read_parquet(here("data", "processed", "ff_cfd_scaled.parquet")))
 colnames(cfd_data) <- 2027:2056
 
-# Load initial combined storage data
-ic_data <- as.matrix(
-  read_parquet(file = here::here("data", "processed", "ff_init_storage_scaled.parquet"))
-)
+# Load scaled initial storage data
+ic_data <- as.matrix(read_parquet(here("data", "processed", "ff_init_storage_scaled.parquet")))
 
-# Combine CFD and initial storage data
+# Combine both into a single matrix for PCA
 combined_data <- cbind(cfd_data, ic_data)
 
-# Calculate covariance matrix and perform eigen decomposition
+# ==============================================================================
+# 3. Principal Component Analysis (PCA)
+# ==============================================================================
+
 cov_matrix <- cov(combined_data)
 eigen_decomp <- eigen(cov_matrix)
-rotation_matrix <- eigen_decomp$vectors[, 1:2]  # Select first two PCs
+rotation_matrix <- eigen_decomp$vectors[, 1:2]
 
-# Compute principal components
 principal_components <- combined_data %*% rotation_matrix
-
-# Calculate the ratio of the first two eigenvalues
-eigen_ratio <- eigen_decomp$values[1] / eigen_decomp$values[2]
-
-# Determine ranges for the first two principal components
 pc1_range <- range(principal_components[, 1])
 pc2_range <- range(principal_components[, 2])
 
-# Define data list (format required for supersom) and user-defined weights
+# ==============================================================================
+# 4. Prepare Data
+# ==============================================================================
+
+# Define SOM input and weights
 data_list <- list(cfd_data, ic_data)
 user_weights <- c(0.25, 0.75)
 
-# Clean up temporary objects to free memory
-rm(
-  ic_data, 
-  cov_matrix, 
-  eigen_decomp, 
-  principal_components, 
-  combined_data, 
-  cfd_data, 
-  ic_data
-)
+# Free memory
+rm(cov_matrix, eigen_decomp, principal_components, combined_data, cfd_data, ic_data)
 gc()
 
 # ==============================================================================
-# 4. Sample Configurations with Latin Hypercube Sampling
+# 4. Sample Hyperparameter Configurations with Latin Hypercube Sampling (LHS)
 # ==============================================================================
-# Sample hyperparameter configurations using Latin Hypercube Sampling (LHS).
-# Map the sampled unit cube to specified hyperparameter ranges for continuous
-# and discrete variables.
+# This section generates diverse SOM hyperparameter configurations using LHS, 
+# maps the sampled unit (i.e., 0-1) values to defined ranges, and saves the 
+# resulting configuration dataframe.
 
-# Define the number of samples
-n_samples <- 1000
+# ------------------------------------------------------------------------------
+# 4.1 Define Sampling Parameters
+# ------------------------------------------------------------------------------
 
-# Generate the Latin Hypercube Sample
+n_samples <- 1000  # Number of LHS samples
+
+# Continuous hyperparameter ranges
+radius_range     <- c(0.5, 1)
+y_dim_range      <- c(3, 5)
+x_y_ratio_range  <- c(floor(sqrt(eigen_ratio)), ceiling(eigen_ratio))
+
+# Discrete hyperparameter options
+neighborhood_fnc_opts <- c("gaussian", "bubble")
+
+# ------------------------------------------------------------------------------
+# 4.2 Generate and Map LHS Samples
+# ------------------------------------------------------------------------------
+
+# Generate LHS in unit hypercube
 cube <- as.data.frame(improvedLHS(n = n_samples, k = 4))
 colnames(cube) <- c("radius", "y_dim", "x_y_ratio", "neighborhood_fnc")
 
-# Define ranges for continuous hyperparameters
-radius_range <- c(0.5, 1)
-y_dim_range <- c(3, 5)
-x_y_ratio_range <- c(floor(sqrt(eigen_ratio)), ceiling(eigen_ratio))
-
-# Define options for discrete hyperparameters
-neighborhood_fnc_opts <- c("gaussian", "bubble")
-
-# Map cube samples (value between 0-1) to continuous hyperparameter ranges
-cube$radius <- qunif(
-  cube$radius, 
-  min = radius_range[1], 
-  max = radius_range[2]
-)
+# Map unit samples to continuous parameter ranges
+cube$radius <- qunif(cube$radius, min = radius_range[1], max = radius_range[2])
 
 cube$y_dim <- round(qunif(
   cube$y_dim,
@@ -105,7 +91,7 @@ cube$x_y_ratio <- qunif(
   max = x_y_ratio_range[2]
 )
 
-# Map cube samples (value between 0-1) to discrete hyperparameter options
+# Map unit samples to discrete parameter categories
 neighborhood_probs <- seq(0, 1, length.out = length(neighborhood_fnc_opts) + 1)
 cube$neighborhood_fnc <- continuous_to_discrete(
   cube = cube$neighborhood_fnc,
@@ -113,22 +99,27 @@ cube$neighborhood_fnc <- continuous_to_discrete(
   categories = neighborhood_fnc_opts
 )
 
-# Derive additional hyperparameters based on sampled values
-cube$x_dim <- round(cube$y_dim * cube$x_y_ratio)
+# ------------------------------------------------------------------------------
+# 4.3 Derive Additional Parameters and Format
+# ------------------------------------------------------------------------------
+
+cube$x_dim     <- round(cube$y_dim * cube$x_y_ratio)
 cube$n_neurons <- cube$y_dim * cube$x_dim
+cube$ConfigID  <- seq_len(n_samples)
 
-# Add a configuration ID and reorder columns
-cube$ConfigID <- 1:n_samples
-all_configs <- cube[, c(7, 1:6)]
+# Reorder columns for readability
+all_configs <- cube[, c("ConfigID", "radius", "y_dim", "x_y_ratio", 
+                        "neighborhood_fnc", "x_dim", "n_neurons")]
 
-# Save the configurations
+# ------------------------------------------------------------------------------
+# 4.4 Save Configurations and Visualize Distributions
+# ------------------------------------------------------------------------------
+
 write.csv(
-  x = all_configs,
+  all_configs,
   file = file.path(output_dir, "all_configs.csv"),
   row.names = FALSE
 )
-
-# Visualize hyperparameter distributions
 hist(
   all_configs$radius, 
   main = "Distribution of Radius", 
@@ -151,18 +142,13 @@ hist(
 )
 table(all_configs$neighborhood_fnc)
 
-# Clean up temporary objects
-rm(
-  cube, 
-  radius_range, 
-  y_dim_range, 
-  x_y_ratio_range, 
-  neighborhood_fnc_opts, 
-  neighborhood_probs, 
-  n_samples
-)
-gc()
+# ------------------------------------------------------------------------------
+# 4.5 Clean Up
+# ------------------------------------------------------------------------------
 
+rm(cube, radius_range, y_dim_range, x_y_ratio_range,
+   neighborhood_fnc_opts, neighborhood_probs, n_samples)
+gc()
 
 # ==============================================================================
 # 5. Perform Successive Non-Dominated Pruning
@@ -226,14 +212,9 @@ for (i in 1:2){
       radius_fraction <- config$radius
       
       # Display configuration details
-      print(paste(
-        "Y =", ydim, 
-        ", X =", xdim, 
-        ", N =", n_neuron, 
-        ", neighbor=", neighborhood_fnc, 
-        ", radius =", radius_fraction, 
-        ", subset data size =", subset_data_size[j],
-        ", iteration =", i
+      print(glue::glue(
+        "Y = {ydim}, X = {xdim}, N = {n_neuron}, neighbor = {neighborhood_fnc}, ",
+        "radius = {radius_fraction}, subset data size = {subset_data_size[j]}, iteration = {i}"
       ))
       
       # Calculate initial neighborhood radius
@@ -318,7 +299,7 @@ for (i in 1:2){
     
     # Save the configuration performance data for the current iteration
     output_file <- file.path(
-      paste0("round", i), 
+      paste0("snp_round", i), 
       paste0(n_configs_each_round[j], "configs.csv")
     )
     
@@ -394,8 +375,8 @@ for (i in 1:2){
 # ==============================================================================
 
 # Load the configuration data for the best-performing configurations
-round1 <- read.csv(file.path(output_dir, "round1", "32configs.csv"))
-round2 <- read.csv(file.path(output_dir, "round2", "32configs.csv"))
+round1 <- read.csv(file.path(output_dir, "snp_round1", "32configs.csv"))
+round2 <- read.csv(file.path(output_dir, "snp_round2", "32configs.csv"))
 
 # Combine and remove duplicate configurations based on ConfigID
 best_configs <- bind_rows(round1, round2) %>% 
@@ -472,7 +453,7 @@ fig <- fig %>%
 
 saveWidget(
   as_widget(fig), 
-  file.path(output_dir, 'config_pc_plot.html')
+  file.path(output_dir, 'nondom_config_pc_plot.html')
 )
 
 
@@ -482,8 +463,7 @@ saveWidget(
 # Using the chosen configuration, assess whether the number of training epochs 
 # affects the fit metrics.
 
-# Select a configuration by ConfigID (e.g., from parallel coordinates plot)
-selected_config_id <- 318
+selected_config_id <- 318  # chosen from PC plot
 
 # Extract configuration parameters
 x_dim <- all_configs$x_dim[selected_config_id]
@@ -566,6 +546,6 @@ epoch_results <- data.frame(
 
 write.csv(
   epoch_results,
-  file = file.path(output_dir, "epoch_test.csv"),
+  file = file.path(output_dir, "epoch_test_results.csv"),
   row.names = FALSE
 )
