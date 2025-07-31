@@ -7,6 +7,7 @@ library(dplyr)
 library(plotly)
 library(htmlwidgets)
 library(aweSOM)
+library(nsga2R)
 
 ############################# SOM HELPER FUNCTIONS #############################
 ##################### Coded by Nathan Bonham - March 2022 ######################

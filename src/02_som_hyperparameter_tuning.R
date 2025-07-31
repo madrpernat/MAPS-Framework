@@ -4,6 +4,7 @@
 
 library(here)
 source(here("src", "utils", "som_library.R"))
+source(here("src", "utils", "error_functions.R"))
 
 # ==============================================================================
 # 2. Define Output Directory
@@ -20,13 +21,13 @@ output_dir <- here::here("output", "som_hyperparameter_tuning")
 
 # Load CFD data
 cfd_data <- as.matrix(
-  read_parquet(file = "data/processed/ff_cfd_scaled.csv")
+  read_parquet(file = here::here("data", "processed", "ff_cfd_scaled.parquet"))
 )
 colnames(cfd_data) <- 2027:2056
 
 # Load initial combined storage data
 ic_data <- as.matrix(
-  read_parquet(file = "data/processed/ff_init_storage_scaled.csv")
+  read_parquet(file = here::here("data", "processed", "ff_init_storage_scaled.parquet"))
 )
 
 # Combine CFD and initial storage data
@@ -244,10 +245,10 @@ for (i in 1:2){
       )
       
       # Generate neuron initialization matrices
-      d1 <- seq(from = pc1range[1], to = pc1range[2], length.out = xdim)
-      d2 <- seq(from = pc2range[1], to = pc2range[2], length.out = ydim)
+      d1 <- seq(from = pc1_range[1], to = pc1_range[2], length.out = xdim)
+      d2 <- seq(from = pc2_range[1], to = pc2_range[2], length.out = ydim)
       pc_grid <- expand.grid(d1, d2)
-      init <- as.matrix(pc_grid) %*% t(rm)
+      init <- as.matrix(pc_grid) %*% t(rotation_matrix)
 
       init1 = as.matrix(init[, 1:30], ncol=30)  # flow/dem
       init2 = as.matrix(init[, 31], ncol=1)     # initial storage
@@ -275,7 +276,7 @@ for (i in 1:2){
       
       # Calculate objectives/fit metrics (% Variance Explained and Topo Error)
       var_explained <- -1 * calc_percent_var_explained(som, total_ss_euclidean)
-      topo_error <- topo_error_parallel(som, 15)
+      topo_error <- topo_error_parallel(som=som, num_cores = 15)
       
       # Store and print objectives
       vars <- c(vars, var_explained)
@@ -472,4 +473,99 @@ fig <- fig %>%
 saveWidget(
   as_widget(fig), 
   file.path(output_dir, 'config_pc_plot.html')
+)
+
+
+# ==============================================================================
+# 7. Epoch test on selected configuration
+# ==============================================================================
+# Using the chosen configuration, assess whether the number of training epochs 
+# affects the fit metrics.
+
+# Select a configuration by ConfigID (e.g., from parallel coordinates plot)
+selected_config_id <- 318
+
+# Extract configuration parameters
+x_dim <- all_configs$x_dim[selected_config_id]
+y_dim <- all_configs$y_dim[selected_config_id]
+neighborhood_fnc <- all_configs$neighborhood_fnc[selected_config_id]
+radius_fraction <- all_configs$radius[selected_config_id]
+
+# Calculate initial neighborhood radius
+init_radius <- quantile2radius(
+  fraction = radius_fraction,
+  x = x_dim, 
+  y = y_dim,
+  shape = 'hexagonal'
+)
+
+# Construct neuron initialization matrix from PCA space
+d1 <- seq(from = pc1_range[1], to = pc1_range[2], length.out = x_dim)
+d2 <- seq(from = pc2_range[1], to = pc2_range[2], length.out = y_dim)
+pc_grid <- expand.grid(d1, d2)
+init_matrix <- as.matrix(pc_grid) %*% t(rotation_matrix)
+init1 <- as.matrix(init_matrix[, 1:30], ncol = 30)
+init2 <- as.matrix(init_matrix[, 31], ncol = 1)
+
+# Calculate total sum of squares for full dataset
+total_ss_euclidean <- calc_total_ss(
+  data_list = data_list, 
+  user_weights = user_weights, 
+  distance_metric = "euclidean"
+)
+
+# Define range of epochs to test
+epochs_to_test <- 12:36
+
+# Initialize vectors to store results
+vars <- c()
+topos <- c()
+
+# Loop over epoch values and fit SOM each time
+for (epochs in epochs_to_test) {
+  
+  som <- supersom(
+    data = data_list,
+    radius = init_radius,
+    dist.fcts = 'euclidean',
+    grid = somgrid(
+      xdim = x_dim,
+      ydim = y_dim,
+      topo = 'hexagonal',
+      toroidal = FALSE,
+      neighbourhood.fct = neighborhood_fnc
+    ),
+    user.weights = user_weights,
+    rlen = epochs,
+    keep.data = TRUE,
+    init = list(init1, init2),
+    mode = 'pbatch',
+    cores = -1,
+    normalizeDataLayers = FALSE
+  )
+  
+  # Evaluate objectives
+  percent_var_explained <- -1 * calc_percent_var_explained(som, total_ss_euclidean)
+  topo_error <- topo_error_parallel(som, 15)
+  
+  # Print progress
+  print(glue::glue("Epochs: {epochs}, Pct.Var.Explained: {percent_var_explained}, Topo.Error: {topo_error}"))
+  
+  # Store results
+  vars <- c(vars, percent_var_explained)
+  topos <- c(topos, topo_error)
+  
+}
+
+# Combine and save results
+epoch_results <- data.frame(
+  N.Epochs = epochs_to_test,
+  Pct.Var.Explained = vars,
+  Topo.Error = topos
+)
+
+write.csv(
+  epoch_results,
+  file = file.path(output_dir, "epoch_test.csv"),
+  row.names = FALSE
 )
