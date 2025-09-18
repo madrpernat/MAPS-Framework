@@ -1,6 +1,5 @@
 from typing import Dict, List, Tuple, Optional
 
-import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import matplotlib.patches as patches
@@ -15,28 +14,29 @@ def calculate_trace_metrics(trace_timeseries: pd.DataFrame) -> pd.DataFrame:
     """
     Calculates various hydrological metrics for each of the provided traces.
 
-    Args:
-        trace_timeseries (pd.DataFrame): Tidy DataFrame containing annual flow data. Each row represents a single
-        year's data for a specific trace. At a minimum, the DataFrame should include the following columns:
-              - 'Trace': Unique identifier for each trace
-              - 'LF_Annual': Annual flow value for each year of the trace
+    Parameters
+    ----------
+    trace_timeseries : pd.DataFrame
+        Tidy DataFrame containing annual flow data. Each row represents a single year's data for a specific trace. At a
+        minimum, the DataFrame should include the following columns:
+          - 'Trace': Unique identifier for each trace
+          - 'LF_Annual': Annual flow value for each year of the trace
 
-    Returns:
-        pd.DataFrame: DataFrame containing the calculated metrics for each trace, including:
-              - Median: Median annual flow for each trace
-              - Max: Maximum annual flow for each trace
-              - Min: Minimum annual flow for each trace
-              - SD: Standard deviation of annual flows for each trace
-              - IQR: Inter-quartile range of annual flows for each trace
-              - Driest10yr: Average annual flow for the driest consecutive 10-year period for each trace
-              - Wettest10yr: Average annual flow for the wettest consecutive 10-year period for each trace
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame containing the calculated metrics for each trace, including:
+          - Median: Median annual flow for each trace
+          - Max: Maximum annual flow for each trace
+          - Min: Minimum annual flow for each trace
+          - SD: Standard deviation of annual flows for each trace
+          - IQR: Inter-quartile range of annual flows for each trace
     """
 
     n_traces = max(trace_timeseries[ids.TRACE])
 
     metrics = {
-        "Median": [], "Max": [], "Min": [], "SD": [],
-        "IQR": [], "Driest10yr": [], "Wettest10yr": []
+        "Median": [], "Max": [], "Min": [], "SD": [], "IQR": []
     }
 
     for trace_id in range(1, n_traces + 1):
@@ -56,28 +56,47 @@ def create_cumulative_timeseries_som_view(
         sow_cumulative_timeseries: pd.DataFrame,
         start_year: int,
         end_year: int,
+        x_ticks: list[int],
+        y_ticks: list[int],
         color: str,
         rows: int = 5,
         cols: int = 17
-) -> plt.figure:
+) -> plt.Figure:
     """
-    Creates a visual representation of a hexagonal Self-Organizing Map (SOM) where each neuron is displayed as a
-    cumulative timeseries plot. The cumulative timeseries for States of the World (SOWs) within the neuron are
-    highlighted in a specified color, while those for SOWs outside the neuron are shown in gray.
+    Create a SOM visualization where each neuron is shown as a cumulative timeseries plot.
 
-    Args:
-        sow_info (pd.DataFrame): DataFrame containing information about the SOWs, where each row
-            corresponds to a SOW. The required column is:
-                - 'Neuron': The neuron number (starting from 1) in the SOM to which theSOW is assigned.
-        sow_cumulative_timeseries (pd.DataFrame): DataFrame containing the cumulative timeseries data foreach SOW. Each
-            column corresponds to a SOW, and each row represents a year.
-        colors (List[str]): List of colors used to highlight the timeseries for each neuron.
-        n_neurons (int, optional): The total number of neurons in the SOM. Default is 52.
-        rows (int, optional): The number of rows in the subplot grid. Default is 4.
-        cols (int, optional): The number of columns in the subplot grid. Default is 13.
+    Each subplot corresponds to a neuron in a hexagonal SOM grid. For a given neuron,
+    all States of the World (SOWs) assigned to that neuron have their cumulative
+    flow–minus–demand (CFD) timeseries plotted in the specified highlight color,
+    while all other SOWs are shown in gray for context.
 
-    Returns:
-        plt.figure: A Matplotlib figure object containing the cumulative timeseries SOM view.
+    Parameters
+    ----------
+    sow_info : pd.DataFrame
+        DataFrame of SOW metadata. Must include:
+            - 'Neuron': Neuron assignment for each SOW (integer, starting at 1).
+    sow_cumulative_timeseries : pd.DataFrame
+        Cumulative CFD timeseries for each SOW.
+        Shape: (n_years, n_sows), with rows = simulation years and columns = SOWs.
+    start_year : int
+        First simulation year (inclusive).
+    end_year : int
+        Last simulation year (exclusive).
+    x_ticks : list of int
+        Values to display as x-axis ticks (e.g., selected simulation years).
+    y_ticks : list of int
+        Values to display as y-axis ticks (e.g., CFD values).
+    color : str
+        Matplotlib color string for highlighting SOWs within a neuron.
+    rows : int, optional
+        Number of rows in the SOM grid. Default is 5.
+    cols : int, optional
+        Number of columns in the SOM grid. Default is 17.
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+        Figure containing the cumulative timeseries SOM view.
     """
     n_neurons = rows * cols
     sim_years = np.arange(start_year, end_year)
@@ -95,7 +114,6 @@ def create_cumulative_timeseries_som_view(
     for neuron in neurons:
         x, y = get_subplot_coordinates(
             neuron=neuron,
-            n_neurons=n_neurons,
             rows=rows,
             cols=cols
         )
@@ -130,10 +148,10 @@ def create_cumulative_timeseries_som_view(
                 length=0
             )
             ax.set_xticks(
-                ticks=[2027, 2042, 2056]
+                ticks=x_ticks
             )
             ax.set_xticklabels(
-                labels=[2027, 2042, 2056],
+                labels=x_ticks,
                 fontsize=12,
                 rotation=90
             )
@@ -146,10 +164,10 @@ def create_cumulative_timeseries_som_view(
                 length=0
             )
             ax.set_yticks(
-                ticks=[0, 200, 400]
+                ticks=y_ticks
             )
             ax.set_yticklabels(
-                labels=[0, 200, 400],
+                labels=y_ticks,
                 fontsize=12
             )
 
@@ -166,15 +184,41 @@ def create_cumulative_timeseries_som_view(
 
 
 def create_boxplot_som_view(
-        sow_info: pd.DataFrame,
-        feature: str,
-        y_ticks: [float],
-        color: str,
-        rows: int = 5,
-        cols: int = 17
-) -> plt.figure:
+    sow_info: pd.DataFrame,
+    feature: str,
+    y_ticks: list[float],
+    color: str,
+    rows: int = 5,
+    cols: int = 17,
+) -> plt.Figure:
     """
+    Create a SOM visualization where each neuron is shown as a boxplot of a given feature.
 
+    Each subplot corresponds to a neuron in a hexagonal SOM grid. For the SOWs assigned to a
+    given neuron, the distribution of the selected feature is summarized as a boxplot. The
+    box and whiskers are styled using the specified color. Neuron IDs are overlaid as labels.
+
+    Parameters
+    ----------
+    sow_info : pd.DataFrame
+        DataFrame of SOW metadata. Must include:
+            - 'Neuron': Neuron assignment for each SOW (integer, starting at 1).
+            - <feature>: Column with the feature to be plotted.
+    feature : str
+        Name of the column in `sow_info` to visualize with boxplots.
+    y_ticks : list of float
+        Tick values for the y-axis (shared across neurons).
+    color : str
+        Matplotlib color string for styling boxplots.
+    rows : int, optional
+        Number of rows in the SOM grid. Default is 5.
+    cols : int, optional
+        Number of columns in the SOM grid. Default is 17.
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+        Figure containing the boxplot SOM view.
     """
 
     fig = plt.figure(figsize=(19, 9.5))
@@ -190,7 +234,6 @@ def create_boxplot_som_view(
     for neuron in neurons:
         x, y = get_subplot_coordinates(
             neuron=neuron,
-            n_neurons=rows*cols,
             rows=rows,
             cols=cols
         )
@@ -253,7 +296,6 @@ def create_boxplot_som_view(
 
 def get_subplot_coordinates(
         neuron: int,
-        n_neurons: int,
         rows: int,
         cols: int
 ) -> [int, int]:
@@ -265,21 +307,25 @@ def get_subplot_coordinates(
         - The SOM configuration is hexagonal, meaning that alternating rows are shifted. Rows shifted to the right are
           those starting with the bottom row and every other row going up.
         - The GridSpec configuration for plotting the subplot has twice the number of SOM columns plus one (e.g., if the
-          SOM has 13 columns, the GridSpec configuration has 27 columns: 13 * 2 + 1).
+          SOM has 17 columns, the GridSpec configuration has 35 columns: 12 * 2 + 1).
         - Neurons are numbered starting from 1 in the bottom-left corner, increasing along the bottom row. Numbering
           continues from left to right in the next row up, and so on, with the last neuron being in the top-right corner
 
-    Args:
-        neuron (int): The index of the neuron (starting at 1) for which to calculate the subplot coordinates.
-        n_neurons (int): The total number of neurons in the SOM.
-        rows (int): The number of rows in the SOM.
-        cols (int): The number of columns in the SOM.
+    Parameters
+    ----------
+    neuron : int
+        The index of the neuron (starting at 1) for which to calculate the subplot coordinates.
+    rows : int
+        The number of rows in the SOM.
+    cols : int
+        The number of columns in the SOM.
 
-    Returns:
-        Tuple[int, int]: A tuple containing the row and column GridSpec coordinates for the neuron subplot.
-
+    Returns
+    -------
+    Tuple[int, int]
+        A tuple containing the row and column GridSpec coordinates for the neuron subplot.
     """
-
+    n_neurons = rows * cols
     x = int(np.floor((n_neurons - neuron) / cols))
     y = int(((neuron - 1) % cols)) * 2
 
@@ -298,7 +344,7 @@ def plot_cumulative_timeseries(
         cumulative_timeseries: pd.DataFrame,
         indices: List[int],
         non_indices: List[int],
-        ax: matplotlib.axes.Axes,
+        ax: plt.Axes,
         color: str
 ) -> None:
     """
@@ -306,17 +352,25 @@ def plot_cumulative_timeseries(
     not in the neuron being plotted) are colored gray, and timeseries specified by 'indices' (i.e., those in the neuron
     being plotted) are colored in the specified color.
 
-    Args:
-        sim_years (np.ndarray): A 1-dimensional numpy array containing the simulation years.
-        cumulative_timeseries (pd.DataFrame): A DataFrame containing the cumulative timeseries data. Each column
-                                              represents a timeseries.
-        indices (List[int]): A list of indices representing the timeseries to be highlighted in the specified color.
-        non_indices (List[int]): A list of indices representing the timeseries to be colored gray.
-        ax (matplotlib.axes.Axes): The matplotlib Axes object on which the timeseries will be plotted.
-        color (str): The color used to highlight the timeseries specified by 'indices'.
+    Parameters
+    ----------
+    sim_years : np.ndarray
+        A 1-dimensional numpy array containing the simulation years.
+    cumulative_timeseries : pd.DataFrame)
+        A DataFrame containing the cumulative timeseries data. Each column represents a timeseries.
+    indices : List[int]
+        A list of indices representing the timeseries to be highlighted in the specified color.
+    non_indices : List[int]
+        A list of indices representing the timeseries to be colored gray.
+    ax : plt.Axes
+        The matplotlib Axes object on which the timeseries will be plotted.
+    color : str
+        The color used to highlight the timeseries specified by 'indices'.
 
-    Returns:
-        None: This function does not return any value. It directly modifies the provided Axes object.
+    Returns
+    -------
+    None
+        This function does not return anything. It directly modifies the provided Axes object.
     """
 
     # Plot non_indices timeseries
@@ -366,30 +420,41 @@ def create_condensed_som_figure(
         value_range: Optional[Tuple[float, float]] = None,
         rows: int = 5,
         cols: int = 17
-) -> plt.figure:
+) -> plt.Figure:
     """
     Creates a visual representation of a Self-Organizing Map (SOM) where each neuron is depicted as a hexagon with a
     fill color corresponding to its specified value and the specified color scheme.
 
-    Args:
-        title (str): The title of the figure.
-        colorbar_label (str): The label for the colorbar.
-        neuron_values (List[float]): A list of values corresponding to each neuron. The length must be the same as the
-                                     number of entries in neuron_coordinates.
-        neuron_coordinates (pd.DataFrame): A DataFrame containing the x and y coordinates of each neuron. Required
-                                           columns:
-                                           - 'x': The x-coordinate of each neuron.
-                                           - 'y': The y-coordinate of each neuron.
-        color_scheme (str): The name of the color scheme to be used for the hexagons.
-        n_digits (int): The number of digits to round the neuron values to for display.
-        annotation_size (int): The font size for the neuron value annotations.
-        inverse_colorbar (bool): Whether to invert the colorbar to have the largest value on the left.
-        value_range (Tuple[float, float], optional): Colorbar range for plotting. Defaults to min/max of provided data.
-        rows (int, optional): The number of rows in the subplot grid. Default is 5.
-        cols (int, optional): The number of columns in the subplot grid. Default is 17.
+    Parameters
+    ----------
+    title : str
+        The title of the figure.
+    colorbar_label : str
+        The label for the colorbar.
+    neuron_values : List[float]
+        A list of values corresponding to each neuron. The length must be the same as the number of entries in
+        neuron_coordinates.
+    neuron_coordinates : pd.DataFrame
+        A DataFrame containing the x and y coordinates of each neuron. Required columns:
+           - 'x': The x-coordinate of each neuron.
+           - 'y': The y-coordinate of each neuron.
+    color_scheme : str
+        The name of the color scheme to be used for the hexagons.
+    n_digits : int
+        The number of digits to round the neuron values to for display.
+    inverse_colorbar : bool
+        Whether to invert the colorbar to have the largest value on the left.
+    value_range : Tuple[float, float], optional
+        Colorbar range for plotting. Defaults to min/max of provided data.
+    rows : int, optional
+        The number of rows in the subplot grid. Default is 5.
+    cols : int, optional
+        The number of columns in the subplot grid. Default is 17.
 
-    Returns:
-        plt.figure: A Matplotlib figure object containing the condensed (hexagonal) SOM.
+    Returns
+    -------
+    plt.Figure
+        A Matplotlib figure object containing the condensed (hexagonal) SOM.
     """
 
     if value_range is None:
@@ -488,25 +553,24 @@ def create_condensed_som_figure(
     return fig
 
 
-
 def get_color_scheme(scheme_name: str) -> Tuple[List[Tuple[float, str]], str]:
     """
     Retrieves a predefined color scheme and an appropriate text color.
 
-    Args:
-        scheme_name (str): The name of the color scheme to retrieve. Available schemes are:
+    Parameters
+    ----------
+    scheme_name : str
+        The name of the color scheme to retrieve. Available schemes are:
             - 'good_bad': Green → Yellow → Red
             - 'good_bad_reverse': Red → Yellow → Green
             - 'red_blue': OrangeRed → Blue
             - 'blue_red': Blue → OrangeRed
 
-    Returns:
-        Tuple[List[Tuple[float, str]], str]:
-            - A list of (position, hex color) tuples representing the color scheme.
-            - A string for the recommended text color ("black" or "white").
-
-    Raises:
-        ValueError: If the provided scheme is not one of the predefined options.
+    Returns
+    -------
+    Tuple[List[Tuple[float, str]], str]
+        - A list of (position, hex color) tuples representing the color scheme.
+        - A string for the recommended text color ("black" or "white").
     """
 
     schemes: Dict[str, List[Tuple[float, str]]] = {
@@ -548,13 +612,19 @@ def map_value_to_color(
     """
     Maps a given value to a color in a specified colormap based on the value's position within a defined range.
 
-    Args:
-        value (float): The value to be mapped to a color.
-        value_range (Tuple[float, float]): A tuple containing the minimum and maximum values of the range.
-        cmap (mcolors.LinearSegmentedColormap): A Matplotlib colormap used to map the normalized value to a color.
+    Parameters
+    ----------
+    value : float
+        The value to be mapped to a color.
+    value_range : Tuple[float, float]
+        A tuple containing the minimum and maximum values of the range.
+    cmap : mcolors.LinearSegmentedColormap
+        A Matplotlib colormap used to map the normalized value to a color.
 
-    Returns:
-        Tuple[float, float, float, float]: A tuple representing the RGBA color mapped from the input value.
+    Returns
+    -------
+    Tuple[float, float, float, float]
+        A tuple representing the RGBA color mapped from the input value.
     """
 
     # Normalize the value to the range [0, 1]
@@ -562,30 +632,6 @@ def map_value_to_color(
 
     # Map the normalized value to a color in the gradient
     return cmap(normalized_value)
-
-
-def get_text_color_for_neuron(
-        rgba: Tuple[float, float, float, float]
-) -> str:
-    """
-    Determines whether the text color should be white or black based on the luminance of the background color.
-
-    Args:
-        rgba (Tuple[float, float, float, float]): 4-value tuple representing the RGBA values.
-
-    Returns:
-        str: 'black' if the background color is light, 'white' if the background color is dark.
-    """
-    # Convert RGBA values from 0-1 range to 0-255 range
-    r, g, b, a = rgba
-    r = int(r * 255)
-    g = int(g * 255)
-    b = int(b * 255)
-
-    # Calculate luminance
-    luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
-
-    return 'black' if luminance > 0.28 else 'white'
 
 
 def get_policy_reevaluation_data(
@@ -597,22 +643,27 @@ def get_policy_reevaluation_data(
     Filters the reevaluation data for a given experiment and policy, merges it with SOW neuron information, and pivots
     the data to a wide format where each objective is a column.
 
-    Args:
-        reevaluation_data (pd.DataFrame): DataFrame containing the reevaluation data with columns:
-                                          - 'Experiment': The name of the experiment.
-                                          - 'Policy': The policy ID.
-                                          - 'SOW': The state of the world identifier.
-                                          - 'Objective': The objective being measured.
-                                          - 'Value': The value of the objective.
-        sow_info (pd.DataFrame): DataFrame containing SOW information including neuron assignments.
-                                              Necessary columns:
-                                              - 'SOW': The numerical state of the world identifier.
-                                              - 'Neuron': The neuron number in the SOM to which the SOW is assigned.
-        policy (int): The policy ID to filter the data by.
+    Parameters
+    ----------
+    reevaluation_data : pd.DataFrame
+        DataFrame containing the reevaluation data with columns:
+          - 'Experiment': The name of the experiment.
+          - 'Policy': The policy ID.
+          - 'SOW': The state of the world identifier.
+          - 'Objective': The objective being measured.
+          - 'Value': The value of the objective.
+    sow_info : pd.DataFrame
+        DataFrame containing SOW information including neuron assignments. Necessary columns:
+          - 'SOW': The numerical state of the world identifier.
+          - 'Neuron': The neuron number in the SOM to which the SOW is assigned.
+    policy : int
+        The policy ID to filter the data by.
 
-    Returns:
-        pd.DataFrame: A DataFrame in wide format for the specified experiment/policy where rows represent SOWs and
-                      each objective is a separate column.
+    Returns
+    -------
+    pd.DataFrame
+        A DataFrame in wide format for the specified experiment/policy where rows represent SOWs and each objective is a
+         separate column.
     """
 
     policy_data = reevaluation_data[(reevaluation_data[ids.POLICY] == policy)]

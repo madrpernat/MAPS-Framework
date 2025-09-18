@@ -1,5 +1,7 @@
 from src.utils import ids
 
+CUMULATIVE_PLOT_X_TICKS = [2027, 2042, 2056]
+CUMULATIVE_PLOT_Y_TICKS = [0, 200, 400]
 
 BOXPLOT_Y_TICKS = {
     ids.MEDIAN_FLOW: [7, 14.5, 22],
