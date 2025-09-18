@@ -1,13 +1,41 @@
-# ==============================================================================
-# Generate Input Files for CRSS
-# 
-# This script generates the required input files for CRSS for each SOW in the 
-# sampled SOW ensemble. The inputs include flow files for 29 inflow points, a UB
-# demand file, and initial condition files.Each SOW already specifies initial 
-# elevations for Powell and Mead, and CRMMS projections are used to populate the
-# remaining initial conditions.
-#
-# ==============================================================================
+#' Generate Input Files for CRSS
+#'
+#' This script generates the required input files for CRSS for each SOW in the
+#' sampled SOW ensemble. The inputs include:
+#'   * Flow files for 29 inflow points
+#'   * An Upper Basin (UB) demand file
+#'   * Initial condition (IC) files
+#'
+#' @details
+#' Each SOW specifies:
+#'   - **Powell and Mead elevations**: used to find the closest matching CRMMS
+#'     run (minimizing Euclidean distance).
+#'   - **Trace number**: used to locate and copy the corresponding CRSS flow
+#'     files.
+#'   - **Annual UB demand**: written directly to a UB demand input file.
+#'
+#' Once the best matching CRMMS run is identified for a SOW:
+#'   1. The SOW's Powell and Mead elevations are retained.
+#'   2. All other IC values (e.g., other reservoirs, bank storage, recent
+#'      outflows) are taken from the matched CRMMS run.
+#'   3. Using the values from (1) and (2), RiverWare IC input files are generated.
+#'   4. A UB demand input file is generated.
+#'   5. Flow input files assocated with the SOW's trace are copied from the 'raw 
+#'      CRSS `data/raw/crss_flow_files` to the RiverSMART directory.
+#'
+#' @output
+#'   - `RiverSMART/Model/Inputs/SystemConditionInput/traceX/`: IC + demand files
+#'   - `RiverSMART/Model/Inputs/FlowInput/traceX/`: inflow files copied from
+#'     CRSS source directories
+#'
+#' @seealso
+#'   - [05_create_subsampled_ensemble.R] for the sampled SOW ensemble
+#'   - CRMMS workbooks in `data/raw/eocy2026_crmms_data/` (ESP80/90/100)
+#'   - CRSS flow files in `data/raw/crss_flow_files/`
+#'
+#' @note
+#' Requires Excel CRMMS workbooks and raw CRSS flow files to be present in
+#' `data/raw/`.
 
 library(arrow)
 library(dplyr)
