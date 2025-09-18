@@ -13,3 +13,6 @@ RiverSMART/*
 output/03_final_som/best_som.rds
 
 src/utils/__pycache__/*
+src/configs/__pycache__/*
+
+SuperSOM_Decision_Support.Rproj
