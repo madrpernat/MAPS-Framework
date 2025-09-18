@@ -1,0 +1,15 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+.idea/*
+
+data/processed/*
+data/raw/crss_flow_files/*
+data/raw/eocy2026_crmms_data/*
+
+RiverSMART/*
+
+output/03_final_som/best_som.rds
+
+src/utils/__pycache__/*
