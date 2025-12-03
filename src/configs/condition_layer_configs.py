@@ -24,7 +24,7 @@ PLOT_TITLES = {
 
 COLOR_SCHEMES = {
     ids.MEDIAN_FLOW: 'red_blue',
-    ids.DEMAND: 'red_blue',
+    ids.DEMAND: 'blue_red',
     ids.INIT_STORAGE: 'red_blue'
 }
 
