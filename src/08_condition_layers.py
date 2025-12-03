@@ -63,6 +63,10 @@ class Config:
         return self.base_dir / "output/03_final_som/som_neuron_coordinates.csv"
 
     @property
+    def sow_neuron_ids_file(self) -> Path:
+        return self.base_dir / "output/03_final_som/som_sow_neuron_ids.parquet"
+
+    @property
     def output_dir(self) -> Path:
         return self.base_dir / "output/08_condition_layers"
 
@@ -83,7 +87,7 @@ def save_cumulative_timeseries_plot(sampled_info, sampled_cfd, config: Config) -
         color="blue"
     )
     output_file = config.output_dir / "som_cumulative_timeseries_view.png"
-    fig.savefig(output_file, dpi=400, bbox_inches="tight")
+    fig.savefig(output_file, dpi=600, bbox_inches="tight")
     logging.info("Saved cumulative timeseries plot: %s", output_file)
 
 
@@ -102,7 +106,7 @@ def save_characteristic_plots(ff_info, neuron_coordinates, config: Config) -> No
             color="blue",
         )
         output_file = config.output_dir / f"{characteristic}_boxplot_view.png"
-        fig.savefig(output_file, dpi=400, bbox_inches="tight")
+        fig.savefig(output_file, dpi=600, bbox_inches="tight")
         logging.info("Saved boxplot view: %s", output_file)
 
         # --- Neuron-averaged SOM view ---
@@ -119,7 +123,7 @@ def save_characteristic_plots(ff_info, neuron_coordinates, config: Config) -> No
             value_range=condition_layer_configs.COLORBAR_RANGES.get(characteristic),
         )
         output_file = config.output_dir / f"{characteristic}_neuron_avg_view.png"
-        fig.savefig(output_file, dpi=400, bbox_inches="tight", transparent=True)
+        fig.savefig(output_file, dpi=600, bbox_inches="tight", transparent=True)
         logging.info("Saved neuron-averaged SOM view: %s", output_file)
 
 
@@ -135,6 +139,12 @@ def main(config: Config) -> None:
     sampled_sow_info = pd.read_parquet(config.sampled_info_file)
     sampled_cfd = pd.read_parquet(config.sampled_cfd_file)
     neuron_coordinates = pd.read_csv(config.neuron_coordinate_file)
+
+    # Add Neuron column to ff_sow_info if it doesn't have it (needed if you cloned the repo and did NOT
+    # run 03_best_som.R on your own
+    if ids.NEURON not in ff_sow_info.columns:
+        neurons = pd.read_parquet(config.sow_neuron_ids_file)
+        ff_sow_info[ids.NEURON] = neurons["Neuron"].astype("int")
 
     config.output_dir.mkdir(parents=True, exist_ok=True)
 
