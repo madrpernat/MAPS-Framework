@@ -2,7 +2,7 @@
 Build Full-Factorial Ensemble of States of the World (SOWs).
 
 This script processes hydrologic traces and initial condition/demand samples to generate a full-factorial (ff) ensemble.
-It computes cumulative flow minus demand (CFD) time series, scales key variables for SOM input, and saves results in
+It computes cumulative flow minus demand (CFD) time series, scales variables for SOM input, and saves results in
 both raw and scaled form.
 
 Outputs (saved in /data/processed):
