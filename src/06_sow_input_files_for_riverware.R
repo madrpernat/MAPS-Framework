@@ -37,6 +37,8 @@
 #' Requires Excel CRMMS workbooks and raw CRSS flow files to be present in
 #' `data/raw/`.
 
+source(here::here("src", "utils", "install_packages.R"))
+
 library(arrow)
 library(dplyr)
 library(magrittr)
