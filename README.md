@@ -5,7 +5,7 @@ This repository contains the codebase accompanying the paper “…”. This REA
 ## Repository Structure
 
 ```text
-maps_project/
+MAPS-Framework/
 ├── data/
 │   ├── processed/
 │   └── raw/
