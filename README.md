@@ -79,7 +79,7 @@ If you do not have Git installed, you can also download the repository as a ZIP 
 
 ### Python
 
-The recommended way to create the Python environment for this project is to use Conda with the specifications provided in `maps_env.yaml`. If you do not already have Conda installed, a lightweight installer such as [Miniconda](https://docs.conda.io/en/latest/miniconda.html) is recommended.
+The recommended way to create the Python environment is to use Conda with the specifications provided in `maps_env.yaml`. If you do not already have Conda installed, a lightweight installer such as [Miniconda](https://docs.conda.io/en/latest/miniconda.html) is recommended.
 
 To create the environment, run:
 
@@ -92,3 +92,48 @@ conda env create -f maps_env.yaml
 
 [R](https://cran.r-project.org/) must be installed to run the R components of this project. The primary R scripts source a utility file (`src/utils/install_packages.R`) that installs required packages automatically (if missing) when each script is executed. Therefore, no additional configuration is necessary beyond having R (we used version 4.2.3) available on your system.
 
+## How to Run
+
+### Python
+
+The Python scripts in this project can be run through an IDE (which is what we did—using PyCharm, with steps provided below) or from the command line if desired.
+
+#### PyCharm
+
+1. Open the project folder (`MAPS-Framework`) in PyCharm.
+2. Ensure the project interpreter is set to the Conda environment created from `maps_env.yaml`.
+3. In the file browser, open the desired script inside the `src/` directory.
+4. Run the script using the green forward-arrow button above the editor window.
+
+PyCharm automatically handles the working directory and resolves imports such as `from src.utils import …` without requiring additional configuration.
+
+#### Command Line
+
+Scripts can also be executed directly from the command line. When doing so, they must be run in module form so that Python correctly interprets `src` as the project’s module directory.
+
+1) Activate the Conda environment:
+
+    ```bash
+    conda activate maps_env
+    ```
+
+2) From the project root:
+
+    ```bash
+    python -m src.<script_name without file extension>
+    ```
+
+    For example:
+
+    ```bash
+    python -m src.01_create_sow_ensemble
+    ```
+
+    This ensures that imports (`from src.utils import …`) function correctly when running outside the IDE.
+
+### R
+
+We recommend running R scripts from within [RStudio](https://posit.co/download/rstudio-desktop/).
+
+1. Open the project using the provided `.Rproj` file to ensure the working directory is correctly set to the project root. This ensures that relative paths resolve correctly.
+2. Navigate to the desired script, open it, and execute it within the RStudio environment.
