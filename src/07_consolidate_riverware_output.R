@@ -30,6 +30,8 @@
 # 1. Load Libraries
 # ==============================================================================
 
+source(here::here("src", "utils", "install_packages.R"))
+
 library(readxl)
 library(magrittr)
 library(arrow)

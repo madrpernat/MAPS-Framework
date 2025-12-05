@@ -26,9 +26,10 @@
 # 1. Load Libraries and Utility Functions
 # ==============================================================================
 
+source(here::here("src", "utils", "install_packages.R"))
+
 library(here)
 library(arrow)
-
 source(here::here("src", "utils", "som_library.R"))
 
 # ==============================================================================

@@ -3,8 +3,9 @@
 #' @description
 #' The full-factorial ensemble of States of the World (SOWs) is often too large
 #' to simulate directly in follow-on modeling. This script implements a
-#' subsampling experiment to identify how many SOWs are needed to adequately
-#' represent the diversity and characteristics of the full ensemble.
+#' subsampling experiment to identify how many SOWs are need to be sampled
+#' from each neuron to adequately represent the diversity and characteristics of 
+#' of the SOWs contained in each neuron.
 #' 
 #' This script:
 #'   1. Loads full SOW metadata (`ff_sow_info`) and CFD time series (`ff_cfd`).
@@ -28,9 +29,10 @@
 # 1. Load Libraries and Utility Functions
 # ==============================================================================
 
+source(here::here("src", "utils", "install_packages.R"))
+
 library(here)
 library(arrow)
-
 source(here::here("src", "utils", "som_library.R"))
 
 # ==============================================================================
