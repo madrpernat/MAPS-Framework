@@ -1,6 +1,6 @@
 # **M**apping **A**lternative **P**erformance across **S**OWs (MAPS) Framework
 
-This repository contains the codebase accompanying the paper “A Framework for …”. This README provides an overview of the repository structure, instructions for cloning the project, and guidance on which scripts can be executed directly from the cloned version. Due to GitHub storage limitations, some large intermediary datasets (e.g., raw CRSS outputs) could not be uploaded. However, all essential datasets required to reproduce the figures—such as SOW characteristics and objective values from all simulations—are included. As a result, not every script is fully runnable from the cloned repository, but all are provided to document the complete analytical workflow.
+This repository contains the codebase accompanying the paper “…”. This README provides an overview of the repository structure, instructions for cloning the project, and guidance on which scripts can be executed directly from the cloned version. Due to GitHub storage limitations, some large intermediary datasets (e.g., raw CRSS outputs) could not be uploaded. However, all essential datasets required to reproduce the figures—such as SOW characteristics and objective values from all simulations—are included. As a result, not every script is fully runnable from the cloned repository, but all are provided to document the complete analytical workflow.
 
 ## Repository Structure
 
@@ -52,7 +52,7 @@ both unscaled and scaled form in `data/processed/`.
 - **`04_subsampling_experiment.R`** — Implements a subsampling experiment to determine how many SOWs need to be sampled from each neuron to adequately represent the diversity and characteristics of the SOWs within each neuron.
 - **`05_create_subsampled_ensemble.R`** — Creates the subsampled SOW ensemble for simulation by sampling SOWs from each neuron using Conditioned Latin Hypercube Sampling, based on the sample size identified in the previous script.
 - **`06_sow_input_files_for_riverware.R`** — Generates the required input files for CRSS for each SOW in the subsampled ensemble.
-- **`07_consolidate_riverware_output.R`** — Consolidates objective values from all simulation runs into a single file.
+- **`07_consolidate_riverware_output.R`** — Consolidates objective values from all CRSS simulations into a single file.
 - **`08_condition_layers.py`** — Creates condition layers for the SOW Map, including feature (e.g., initial combined storage) and non-feature (e.g., median annual flow) layers.
 - **`09_performance_layers.py`** — Creates performance layers for Alternatives A, B, and Compromise for multiple objectives, including Powell 3525 and LB Delivery Reduction.
 
