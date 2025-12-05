@@ -63,3 +63,32 @@ Contains subdirectories associated with each of the main `src` scripts, storing 
 ### `maps_env.yaml`
 
 Specifies the Conda environment used in this project for running the Python components, including Python 3.10 and core dependencies such as NumPy, Pandas, scikit-learn, Matplotlib, PyQt, and PyArrow.
+
+## Cloning the Repository
+
+To obtain a local copy of the repository, clone it using Git:
+
+```bash
+git clone https://github.com/madrpernat/MAPS-Framework.git
+cd MAPS-Framework
+```
+
+If you do not have Git installed, you can also download the repository as a ZIP file directly from the GitHub interface: **Code → Download ZIP**. After downloading, extract the ZIP archive to your preferred directory to access the project files.
+
+## Environment Setup
+
+### Python
+
+The recommended way to create the Python environment for this project is to use Conda with the specifications provided in `maps_env.yaml`. If you do not already have Conda installed, a lightweight installer such as [Miniconda](https://docs.conda.io/en/latest/miniconda.html) is recommended.
+
+To create the environment, run:
+
+```bash
+# first, ensure you are in the project directory, then:
+conda env create -f maps_env.yaml
+```
+
+### R
+
+[R](https://cran.r-project.org/) must be installed to run the R components of this project. The primary R scripts source a utility file (`src/utils/install_packages.R`) that installs required packages automatically (if missing) when each script is executed. Therefore, no additional configuration is necessary beyond having R (we used version 4.2.3) available on your system.
+
