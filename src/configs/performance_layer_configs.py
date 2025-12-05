@@ -5,7 +5,7 @@ POLICIES = {
     11: "Compromise"
 }
 
-# List of objectives to evaluate
+# List of objectives to create performance layers for
 OBJECTIVES = [
     "LB_Shortage_Volume",
     "Mead_1000",
