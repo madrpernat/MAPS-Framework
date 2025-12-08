@@ -1,6 +1,6 @@
 # <ins>M</ins>apping <ins>A</ins>lternative <ins>P</ins>erformance across <ins>S</ins>OWs (MAPS) Framework
 
-This repository contains the codebase accompanying the paper “…”. This README provides an overview of the repository structure, instructions for cloning the project, and guidance on which scripts can be executed directly from the cloned version. Due to GitHub storage limitations, some large intermediary datasets (e.g., raw CRSS outputs) could not be uploaded. As a result, not every script is fully runnable from the cloned repository, but all are provided to document the complete analytical workflow. However, all essential datasets required to reproduce the figures—such as SOW characteristics and objective values from all simulations—are included. 
+This repository contains the codebase accompanying the paper “…”. This README provides an overview of the repository structure, instructions for cloning the project, and guidance on which scripts can be executed directly from the cloned version. Due to GitHub storage limitations, some large intermediary datasets (e.g., raw CRSS outputs) could not be uploaded. As a result, not every script is fully runnable from the cloned repository—however, all are provided to document the complete analytical workflow. All essential datasets required to reproduce the figures are included, and the scripts that generate those figures remain fully executable using the data provided.
 
 ## Repository Structure
 
