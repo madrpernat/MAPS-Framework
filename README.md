@@ -100,7 +100,7 @@ conda env create -f maps_env.yaml
 
 ### Python
 
-The Python scripts in this project can be run through an IDE (which is what we did—using PyCharm, with steps provided below) or from the command line if desired.
+The Python scripts in this project can be run through an IDE (which is what we did—using PyCharm, with steps provided below) or from the command line, if desired.
 
 #### PyCharm
 
