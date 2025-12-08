@@ -69,10 +69,6 @@ Specifies the Conda environment used in this project for running the Python comp
 
 RStudio project file that configures the working directory.
 
-## Cloning and Running
-
-It is not likely that 
-
 ## Cloning the Repository
 
 To obtain a local copy of the repository, clone it using Git:
