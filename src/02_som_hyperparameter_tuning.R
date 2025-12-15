@@ -60,6 +60,9 @@ rm(som_data, pca_res); gc()
 # 3. Sample Hyperparameter Configurations with LHS
 # ==============================================================================
 
+# Did NOT tune Distance Function here, as preliminary analysis showed that 
+# Euclidean distance was far superior compared to Manhattan and Sum of Squares
+
 n_samples <- 1000
 
 # Continuous hyperparameter ranges
